@@ -1,6 +1,7 @@
 package abdellah.repositories;
 
 import abdellah.entities.Catalogo;
+import abdellah.entities.Libro;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.NoResultException;
@@ -15,66 +16,80 @@ public class CatalogoRepository {
     }
 
 
-    public Catalogo findByID(Integer catalogoId){
-        Catalogo found = entityManager.find(Catalogo.class, catalogoId);
+    public void save(Catalogo catalogo) {
+        EntityTransaction transaction = this.entityManager.getTransaction();
+        transaction.begin();
+        entityManager.persist(catalogo);
+        transaction.commit();
+    }
 
-       // if (found == null ) {
-       //     System.out.println("lo studente con id: " + catalogoId + "non e' stato trovato");
-       //     throw new NotFoundException(catalogoId); }
-        return found;
 
-        }
-
-    public Catalogo findByISBN(String isbn){
+    public void findAndPrintByISBN(String isbn) {
         try {
-            return entityManager
+            Catalogo c = entityManager
                     .createQuery("SELECT c FROM Catalogo c WHERE c.codiceISBN = :isbn", Catalogo.class)
                     .setParameter("isbn", isbn)
                     .getSingleResult();
+            System.out.println(c);
         } catch (NoResultException e) {
-            System.out.println(e.getMessage());
-            return null;
-
-        }
-    }
-
-    public void findAndPrintByISBN (String isbn){
-        Catalogo risultatoRicerca = this.findByISBN(isbn);
-
-        if(risultatoRicerca != null){
-            System.out.println(risultatoRicerca);
-        }  else {
             System.out.println("Nessun elemento trovato per ISBN: " + isbn);
         }
     }
 
-    public void removeByISBN(String isbn){
+    public void removeByISBN(String isbn) {
+        try {
+            Catalogo catalogoFound = entityManager
+                    .createQuery("SELECT c FROM Catalogo c WHERE c.codiceISBN = :isbn", Catalogo.class)
+                    .setParameter("isbn", isbn)
+                    .getSingleResult();
 
-        Catalogo catalogoFound = this.findByISBN(isbn);
-
-        if (catalogoFound == null) {
-            System.out.println("Cancellazione annullata: ISBN " + isbn + " non trovato.");
-            return;
-        }
-
-        EntityTransaction transaction = entityManager.getTransaction();
-        transaction.begin();
-
-
+            EntityTransaction transaction = entityManager.getTransaction();
+            transaction.begin();
             entityManager.remove(catalogoFound);
+            transaction.commit();
+        } catch (NoResultException e) {
+            System.out.println("Cancellazione annullata: ISBN " + isbn + " non trovato.");
+        }
+    }
 
-        transaction.commit();
+    public void findAndPrintByAnnoPubblicazione(int anno) {
+        List<Catalogo> risultati = entityManager
+                .createQuery("SELECT c FROM Catalogo c WHERE c.annoPubblicazione = :anno", Catalogo.class)
+                .setParameter("anno", anno)
+                .getResultList();
+
+        if (risultati.isEmpty()) {
+            System.out.println("Nessun risultato per l'anno: " + anno);
+        } else {
+            risultati.forEach(System.out::println);
+        }
+    }
+
+    public void findAndPrintByAutore(String autore) {
+        List<Libro> risultati = entityManager
+                .createQuery("SELECT l FROM Libro l WHERE l.autore = :autore", Libro.class)
+                .setParameter("autore", autore)
+                .getResultList();
+
+        if (risultati.isEmpty()) {
+            System.out.println("Nessun libro trovato per l'autore: " + autore);
+        } else {
+            risultati.forEach(System.out::println);
+        }
+    }
+
+    public void findAndPrintByTitolo(String titolo) {
+        List<Catalogo> risultati = entityManager.createQuery(
+                        "SELECT c FROM Catalogo c WHERE LOWER(c.titolo) LIKE :t", Catalogo.class)
+                .setParameter("t", "%" + titolo.toLowerCase() + "%")
+                .getResultList();
+
+        if (risultati.isEmpty()) {
+            System.out.println("Nessun risultato per il titolo: " + titolo);
+        } else {
+            risultati.forEach(System.out::println);
+        }
     }
 
 
-    public void save(Catalogo catalogo){
-
-        EntityTransaction transaction = this.entityManager.getTransaction();
-
-        transaction.begin();
-
-        entityManager.persist(catalogo);
-
-        transaction.commit();
-    }
 }
