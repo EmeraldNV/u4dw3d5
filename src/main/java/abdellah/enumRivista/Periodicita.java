@@ -1,4 +1,5 @@
 package abdellah.enumRivista;
 
-public enum periodicita {
+public enum Periodicita {
+SETTIMANALE, MENSILE, SEMESTRALE
 }
